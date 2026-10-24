@@ -1,0 +1,36 @@
+
+name: MLflow ML Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate Python scripts
+        run: python -m py_compile train.py app.py
+
+      - name: Validate YAML configuration
+        run: |
+          pip install pyyaml
+          python -c "import yaml; yaml.safe_load(open('docker-compose.yml'))"
+          python -c "import yaml; yaml.safe_load(open('prometheus.yml'))"
+
+      - name: Build Docker image
+        run: docker build -t iris-ml-app .
+
